@@ -12,7 +12,6 @@ type Rat struct {
 	Metadata map[string]interface{} `json:"metadata"` // Extensible metadata
 }
 
-// Message represents WebSocket messages
 type Message struct {
 	Type string      `json:"type"`
 	Data interface{} `json:"data"`

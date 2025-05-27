@@ -13,7 +13,7 @@
 
 		const res = await fetch('/api/rats');
 		rats = await res.json();
-		await Promise.resolve(); // wait for the Promise to resolve
+		await Promise.resolve();
 		return () => ws.close();
 	});
 </script>

