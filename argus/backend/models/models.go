@@ -2,8 +2,8 @@ package models
 
 import "github.com/gorilla/websocket"
 
-// Rat represents a connected client with extensible fields
-type Rat struct {
+// Seeker represents a connected client with extensible fields
+type Seeker struct {
 	ID       string                 `json:"id"`       // Unique identifier
 	Name     string                 `json:"name"`     // Rat name
 	OS       string                 `json:"os"`       // Operating system

