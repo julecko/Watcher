@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -66,17 +65,15 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seekerID := uuid.New().String()
-	initData.ID = seekerID
 	initData.Conn = conn
 
 	seekersLock.Lock()
-	seekers[seekerID] = &initData
+	seekers[initData.ID] = &initData
 	seekersLock.Unlock()
 
-	if err := conn.WriteJSON(map[string]string{"id": seekerID}); err != nil {
+	if err := conn.WriteJSON(map[string]string{"id": initData.ID}); err != nil {
 		log.Println("Failed to send ID to seeker:", err)
-		utils.RemoveFromMap(seekers, seekerID, &seekersLock)
+		utils.RemoveFromMap(seekers, initData.ID, &seekersLock)
 		return
 	}
 

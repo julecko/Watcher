@@ -1,4 +1,4 @@
-export interface Rat {
+export interface Seeker {
     id: string;
     name: string;
     os: string;

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Rat } from '$lib/types';
+	import type { Seeker } from '$lib/types';
 
-	let seekers: Record<string, Rat> = {};
+	let seekers: Record<string, Seeker> = {};
 
-	onMount(async () => {
+	onMount(() => {
 		const ws = new WebSocket('ws://localhost:8080/ws/frontend');
 		ws.onmessage = async (event) => {
 			console.log('Message from server:', event.data);

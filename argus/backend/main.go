@@ -14,6 +14,7 @@ func main() {
 
 	http.HandleFunc("/ws/seeker", handlers.SeekerWebSocketHandler)
 	http.HandleFunc("/ws/frontend", handlers.FrontendWebSocketHandler)
+	http.HandleFunc("/ws/frontend/", handlers.FrontendWebSocketHandler)
 
 	http.HandleFunc("/api/seekers", handlers.GetSeekers)
 
