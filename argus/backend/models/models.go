@@ -12,6 +12,11 @@ type Seeker struct {
 	Metadata map[string]interface{} `json:"metadata"` // Extensible metadata
 }
 
+type Frontend struct {
+	SeekerId string
+	Conn     *websocket.Conn
+}
+
 type Message struct {
 	Type string      `json:"type"`
 	Data interface{} `json:"data"`

@@ -24,10 +24,12 @@ var upgrader = websocket.Upgrader{
 
 // Global variables
 var (
-	seekers       = make(map[string]*models.Seeker)
-	seekersLock   sync.RWMutex
-	frontends     = make(map[*websocket.Conn]bool)
-	frontendsLock sync.RWMutex
+	seekers               = make(map[string]*models.Seeker)
+	seekersLock           sync.RWMutex
+	frontends             = make(map[*websocket.Conn]bool)
+	frontendsLock         sync.RWMutex
+	frontendsSpecific     = make(map[string]*models.Frontend)
+	frontendsSpecificLock sync.RWMutex
 )
 
 func ServeFrontend(w http.ResponseWriter, r *http.Request) {
@@ -64,10 +66,10 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 
 	seekerID := uuid.New().String()
 	initData.ID = seekerID
+	initData.Conn = conn
 
 	seekersLock.Lock()
 	seekers[seekerID] = &initData
-	seekers[seekerID].Conn = conn
 	seekersLock.Unlock()
 
 	if err := conn.WriteJSON(map[string]string{"id": seekerID}); err != nil {
@@ -85,25 +87,13 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		if err := conn.ReadJSON(&msg); err != nil {
 			log.Println("Seeker WebSocket read error:", err)
 			utils.RemoveFromMap(seekers, initData.ID, &seekersLock)
-			seekersLock.Lock()
-			delete(seekers, initData.ID)
-			seekersLock.Unlock()
 			broadcastSeekerList()
 			return
 		}
 
 		log.Printf("Received from seeker %s: %v", initData.ID, msg)
 
-		switch msg.Type {
-		case "shell_output":
-			broadcastToFrontends(models.Message{
-				Type: "shell_output",
-				Data: map[string]interface{}{
-					"seeker_id": initData.ID,
-					"output":    msg.Data,
-				},
-			})
-		}
+		broadcastToFrontends(msg)
 	}
 }
 
@@ -122,7 +112,7 @@ func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	data, _ := json.Marshal(seekers)
 	seekersLock.RUnlock()
 	conn.WriteJSON(models.Message{
-		Type: "seeker_list",
+		Type: "Seekers",
 		Data: string(data),
 	})
 
@@ -143,27 +133,48 @@ func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Received from frontend: %v", msg)
 
 		switch msg.Type {
-		case "shell_command":
-			data, ok := msg.Data.(map[string]interface{})
-			if !ok {
-				log.Println("Invalid shell_command data")
-				continue
-			}
-			seekerID, ok := data["seeker_id"].(string)
-			if !ok {
-				log.Println("Invalid seeker_id")
-				continue
-			}
-			command, ok := data["command"].(string)
-			if !ok {
-				log.Println("Invalid command")
-				continue
-			}
-			sendToSeeker(seekerID, models.Message{
-				Type: "shell_command",
-				Data: command,
-			})
 		}
+	}
+}
+
+func FrontendWebSocketHandlerId(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Frontend WebSocket upgrade failed:", err)
+		return
+	}
+
+	seekerId, ok := utils.GetSeekerID(r.URL.Path)
+	if !ok {
+		log.Println("Get seeker id function failed")
+		return
+	}
+
+	var frontendData models.Frontend
+	frontendData.SeekerId = seekerId
+	frontendData.Conn = conn
+
+	frontendsSpecificLock.Lock()
+	frontendsSpecific[seekerId] = &frontendData
+	frontendsSpecificLock.Unlock()
+
+	log.Println("Frontend connected")
+
+	defer func() {
+		utils.RemoveFromMap(frontendsSpecific, conn, &frontendsSpecificLock)
+		log.Println("Frontend disconnected")
+	}()
+
+	for {
+		var msg models.Message
+		if err := conn.ReadJSON(&msg); err != nil {
+			log.Println("Frontend WebSocket read error:", err)
+			return
+		}
+
+		log.Printf("Received from frontend: %v", msg)
+
+		sendToSeeker(seekerId, msg)
 	}
 }
 
@@ -196,7 +207,7 @@ func broadcastSeekerList() {
 	seekersLock.RUnlock()
 
 	broadcastToFrontends(models.Message{
-		Type: "seeker_list",
+		Type: "Seekers",
 		Data: string(data),
 	})
 }
