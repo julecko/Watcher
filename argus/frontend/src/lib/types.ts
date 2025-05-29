@@ -3,6 +3,8 @@ export interface Seeker {
     name: string;
     os: string;
     ip: string;
+    last_active: string;
+    disconnected: boolean;
     metadata: Record<string, unknown>;
 }
 

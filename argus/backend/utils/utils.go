@@ -3,7 +3,6 @@ package utils
 import (
 	"argus/backend/models"
 	"log"
-	"strings"
 	"sync"
 
 	"github.com/gorilla/websocket"
@@ -23,18 +22,11 @@ func RemoveFromMap(m interface{}, key interface{}, lock *sync.RWMutex) {
 			delete(typedMap, k)
 			k.Close()
 		}
+	case map[string]*models.Frontend:
+		if k, ok := key.(string); ok {
+			delete(typedMap, k)
+		}
 	default:
 		log.Println("Unsupported map type passed to removeFromMap")
 	}
-}
-
-func GetSeekerID(path string) (string, bool) {
-	if !strings.HasPrefix(path, "/ws/frontend/") {
-		return "", false
-	}
-	parts := strings.Split(path, "/")
-	if len(parts) != 4 {
-		return "", false
-	}
-	return parts[3], true
 }

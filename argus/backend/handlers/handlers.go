@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -31,6 +32,9 @@ var (
 	frontendsLock         sync.RWMutex
 	frontendsSpecific     = make(map[string]*models.Frontend)
 	frontendsSpecificLock sync.RWMutex
+
+	seekerCleanupTimers     = make(map[string]context.CancelFunc)
+	seekerCleanupTimersLock sync.Mutex
 )
 
 func ServeFrontend(w http.ResponseWriter, r *http.Request) {
@@ -68,8 +72,28 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	initData.Conn = conn
 
 	seekersLock.Lock()
-	seekers[initData.ID] = &initData
+	existing, alreadyConnected := seekers[initData.ID]
+	if alreadyConnected {
+		existing.Conn = conn
+		existing.Disconnected = false
+		existing.LastActive = time.Now()
+	} else {
+		initData.LastActive = time.Now()
+		seekers[initData.ID] = &initData
+	}
 	seekersLock.Unlock()
+
+	if alreadyConnected {
+		broadcastToFrontends(models.Message{
+			Type: "SeekerReconnected",
+			Data: initData.ID,
+		})
+	} else {
+		broadcastToFrontends(models.Message{
+			Type: "SeekerConnected",
+			Data: initData.ID,
+		})
+	}
 
 	if err := conn.WriteJSON(map[string]string{"id": initData.ID}); err != nil {
 		log.Println("Failed to send ID to seeker:", err)
@@ -78,6 +102,8 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("Seeker connected: %s (%s)", initData.Name, initData.ID)
+	
+	notifySeekerConnected(initData.ID)
 
 	broadcastSeekerList()
 
@@ -85,10 +111,52 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		var msg models.Message
 		if err := conn.ReadJSON(&msg); err != nil {
 			log.Println("Seeker WebSocket read error:", err)
-			utils.RemoveFromMap(seekers, initData.ID, &seekersLock)
+
+			seekersLock.Lock()
+			seeker := seekers[initData.ID]
+			if seeker.Conn == conn {
+				seeker.Disconnected = true
+				seeker.Conn = nil
+			}
+			seekersLock.Unlock()
+
+			notifySeekerDisconnected(initData.ID)
 			broadcastSeekerList()
+
+			ctx, cancel := context.WithCancel(context.Background())
+
+			seekerCleanupTimersLock.Lock()
+			seekerCleanupTimers[initData.ID] = cancel
+			seekerCleanupTimersLock.Unlock()
+
+			go func(id string, ctx context.Context) {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(time.Hour):
+					seekersLock.Lock()
+					s, exists := seekers[id]
+					if exists && s.Disconnected {
+						log.Printf("Removing inactive seeker %s", id)
+						delete(seekers, id)
+						broadcastSeekerList()
+					}
+					seekersLock.Unlock()
+
+					seekerCleanupTimersLock.Lock()
+					delete(seekerCleanupTimers, id)
+					seekerCleanupTimersLock.Unlock()
+				}
+			}(initData.ID, ctx)
+
 			return
 		}
+
+		seekersLock.Lock()
+		if seeker, exists := seekers[initData.ID]; exists {
+			seeker.LastActive = time.Now()
+		}
+		seekersLock.Unlock()
 
 		log.Printf("Received from seeker %s: %v", initData.ID, msg)
 
@@ -223,4 +291,36 @@ func broadcastSeekerList() {
 		Type: "Seekers",
 		Data: string(data),
 	})
+}
+
+func notifySeekerConnected(id string) {
+	frontendsSpecificLock.RLock()
+	frontend, exists := frontendsSpecific[id]
+	frontendsSpecificLock.RUnlock()
+
+	if exists {
+		msg := models.Message{
+			Type: "SeekerConnected",
+			Data: id,
+		}
+		if err := frontend.Conn.WriteJSON(msg); err != nil {
+			log.Printf("Failed to notify frontend of seeker %s connection: %v", id, err)
+		}
+	}
+}
+
+func notifySeekerDisconnected(id string) {
+	frontendsSpecificLock.RLock()
+	frontend, exists := frontendsSpecific[id]
+	frontendsSpecificLock.RUnlock()
+
+	if exists {
+		msg := models.Message{
+			Type: "SeekerDisconnected",
+			Data: id,
+		}
+		if err := frontend.Conn.WriteJSON(msg); err != nil {
+			log.Printf("Failed to notify frontend of seeker %s disconnection: %v", id, err)
+		}
+	}
 }
