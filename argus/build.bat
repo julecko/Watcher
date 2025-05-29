@@ -26,4 +26,4 @@ if %ERRORLEVEL% neq 0 (
     exit /b %ERRORLEVEL%
 )
 
-echo Build complete. Run with: bin\argus.exe
+echo Build complete. Run with: .\bin\argus.exe

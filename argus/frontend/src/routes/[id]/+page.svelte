@@ -6,7 +6,11 @@
 	let rat: Rat | null = null;
 
 	onMount(async () => {
-		const res = await fetch(`/api/rats`);
+		const res = await fetch(`/api/seekers`);
+        if (!res.ok) {
+			console.error('Fetch error:', res.status, res.statusText);
+			return;
+		}
 		const rats: Record<string, Rat> = await res.json();
 		rat = rats[$page.params.id] ?? null;
 	});

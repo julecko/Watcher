@@ -3,11 +3,13 @@ package handlers
 import (
 	"argus/backend/models"
 	"argus/backend/utils"
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/google/uuid"
@@ -98,6 +100,19 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/ws/frontend")
+	path = strings.Trim(path, "/")
+
+	if path == "" {
+		frontendWebSocketHandlerNoId(w, r)
+		return
+	}
+
+	r = r.WithContext(context.WithValue(r.Context(), "seekerId", path))
+	frontendWebSocketHandlerWithId(w, r)
+}
+
+func frontendWebSocketHandlerNoId(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Frontend WebSocket upgrade failed:", err)
@@ -137,16 +152,17 @@ func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func FrontendWebSocketHandlerId(w http.ResponseWriter, r *http.Request) {
+func frontendWebSocketHandlerWithId(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Frontend WebSocket upgrade failed:", err)
 		return
 	}
 
-	seekerId, ok := utils.GetSeekerID(r.URL.Path)
-	if !ok {
-		log.Println("Get seeker id function failed")
+	seekerId, ok := r.Context().Value("seekerId").(string)
+	if !ok || seekerId == "" {
+		log.Println("Seeker ID missing or invalid")
+		conn.Close()
 		return
 	}
 
@@ -158,11 +174,11 @@ func FrontendWebSocketHandlerId(w http.ResponseWriter, r *http.Request) {
 	frontendsSpecific[seekerId] = &frontendData
 	frontendsSpecificLock.Unlock()
 
-	log.Println("Frontend connected")
+	log.Printf("Frontend connected for seeker %s", seekerId)
 
 	defer func() {
 		utils.RemoveFromMap(frontendsSpecific, conn, &frontendsSpecificLock)
-		log.Println("Frontend disconnected")
+		log.Printf("Frontend for seeker %s disconnected", seekerId)
 	}()
 
 	for {
@@ -172,7 +188,7 @@ func FrontendWebSocketHandlerId(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Printf("Received from frontend: %v", msg)
+		log.Printf("Received from frontend (%s): %v", seekerId, msg)
 
 		sendToSeeker(seekerId, msg)
 	}

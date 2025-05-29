@@ -5,13 +5,12 @@
 	let rats: Record<string, Rat> = {};
 
 	onMount(async () => {
-		const ws = new WebSocket('ws://localhost:8080/ws');
-		ws.onmessage = async () => {
-			const res = await fetch('/api/rats');
-			rats = await res.json();
+		const ws = new WebSocket('ws://localhost:8080/ws/frontend');
+		ws.onmessage = async (event) => {
+			console.log('Message from server:', event.data);
 		};
 
-		const res = await fetch('/api/rats');
+		const res = await fetch('/api/seekers');
 		rats = await res.json();
 		await Promise.resolve();
 		return () => ws.close();

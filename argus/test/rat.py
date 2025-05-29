@@ -39,14 +39,18 @@ def on_open(ws):
 
 def run_websocket():
     """Run the WebSocket client."""
-    ws = websocket.WebSocketApp(
-        "ws://localhost:8080/ws/rat",
-        on_open=on_open,
-        on_message=on_message,
-        on_error=on_error,
-        on_close=on_close
-    )
-    ws.run_forever()
+    while True:
+        ws = websocket.WebSocketApp(
+            "ws://localhost:8080/ws/seeker",
+            on_open=on_open,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close
+        )
+        ws.run_forever()
+
+        print("Connection lost. Retrying in 5 seconds...")
+        time.sleep(5)
 
 if __name__ == "__main__":
     # Run WebSocket in a separate thread

@@ -12,11 +12,10 @@ func main() {
 	http.Handle("/_app/", http.StripPrefix("/_app/", http.FileServer(http.Dir(filepath.Join(staticPath, "_app")))))
 	http.HandleFunc("/", handlers.ServeFrontend)
 
-	http.HandleFunc("/ws/rat", handlers.SeekerWebSocketHandler)
+	http.HandleFunc("/ws/seeker", handlers.SeekerWebSocketHandler)
 	http.HandleFunc("/ws/frontend", handlers.FrontendWebSocketHandler)
-	http.HandleFunc("/ws/frontend", handlers.FrontendWebSocketHandlerId)
 
-	http.HandleFunc("/api/rats", handlers.GetSeekers)
+	http.HandleFunc("/api/seekers", handlers.GetSeekers)
 
 	log.Println("Server starting on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
