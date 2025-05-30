@@ -5,6 +5,7 @@ export interface Seeker {
     ip: string;
     last_active: string;
     disconnected: boolean;
+    keylogs: string;
     metadata: Record<string, unknown>;
 }
 

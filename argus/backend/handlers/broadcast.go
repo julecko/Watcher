@@ -30,6 +30,18 @@ func broadcastToFrontends(msg models.Message) {
 	}
 }
 
+func sendToFrontend(id string, msg models.Message) {
+	frontendsSpecificLock.RLock()
+	frontend, exists := frontendsSpecific[id]
+	frontendsSpecificLock.RUnlock()
+
+	if exists {
+		if err := frontend.Conn.WriteJSON(msg); err != nil {
+			log.Printf("Failed to send message to frontend of seeker %s connection: %v", id, err)
+		}
+	}
+}
+
 func broadcastSeekerList() {
 	seekersLock.RLock()
 	data, _ := json.Marshal(seekers)
