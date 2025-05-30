@@ -66,10 +66,14 @@ func SeekerWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 			log.Println("Seeker WebSocket read error:", err)
 
 			seekersLock.Lock()
-			seeker := seekers[initData.ID]
-			if seeker.Conn == conn {
-				seeker.Disconnected = true
-				seeker.Conn = nil
+			seeker, ok := seekers[initData.ID]
+			if ok && seeker != nil {
+				if seeker.Conn == conn {
+					seeker.Disconnected = true
+					seeker.Conn = nil
+				}
+			} else {
+				log.Printf("Seeker with ID %s not found during WebSocket cleanup", initData.ID)
 			}
 			seekersLock.Unlock()
 

@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+type seekerIDKey string
+
 func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/ws/frontend")
 	path = strings.Trim(path, "/")
@@ -19,7 +21,7 @@ func FrontendWebSocketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	r = r.WithContext(context.WithValue(r.Context(), "seekerId", path))
+	r = r.WithContext(context.WithValue(r.Context(), seekerIDKey("seekerId"), path))
 	frontendWebSocketHandlerWithId(w, r)
 }
 
@@ -67,7 +69,7 @@ func frontendWebSocketHandlerWithId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	seekerId, ok := r.Context().Value("seekerId").(string)
+	seekerId, ok := r.Context().Value(seekerIDKey("seekerId")).(string)
 	if !ok || seekerId == "" {
 		log.Println("Seeker ID missing or invalid")
 		conn.Close()

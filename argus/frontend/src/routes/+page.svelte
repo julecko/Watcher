@@ -16,6 +16,28 @@
 		});
 	}
 
+	async function removeSeeker(uuid: string) {
+		try {
+			const response = await fetch('http://localhost:8080/api/remove-seeker', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ uuid }),
+			});
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error(`Failed to remove seeker ${uuid}: ${response.status} - ${errorText}`);
+				return;
+			}
+
+			console.log(`Seeker ${uuid} removed successfully`);
+		} catch (err) {
+			console.error('Error removing seeker:', err);
+		}
+	}
+
 	onMount(() => {
 		const ws = new WebSocket('ws://localhost:8080/ws/frontend');
 
@@ -40,20 +62,28 @@
 {#if Object.keys(seekers).length > 0}
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-4">
 		{#each Object.values(seekers) as seeker}
-			<a href="/{seeker.id}" class="block p-5 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-300">
-				<h2 class="text-xl font-semibold mb-2 text-white">{seeker.name}</h2>
-				<p class="text-gray-300 mb-1"><span class="font-medium text-gray-400">OS:</span> {seeker.os}</p>
-				<p class="text-gray-300 mb-1"><span class="font-medium text-gray-400">IP:</span> {seeker.ip}</p>
-				<p class="text-gray-300 mb-2"><span class="font-medium text-gray-400">Last Active:</span> {formatLastActive(seeker.last_active)}</p>
-				<p>
-					<span class="font-medium text-gray-400">Status:</span> 
-					<span class={`inline-block px-2 py-1 rounded text-sm font-semibold ${
-						seeker.disconnected ? 'bg-red-600 text-red-100' : 'bg-green-600 text-green-100'
-					}`}>
-						{seeker.disconnected ? 'Disconnected' : 'Connected'}
-					</span>
-				</p>
-			</a>
+			<div class="block p-5 bg-gray-800 rounded-lg shadow-md hover:bg-gray-700 transition-colors duration-300">
+				<a href="/{seeker.id}" class="block">
+					<h2 class="text-xl font-semibold mb-2 text-white">{seeker.name}</h2>
+					<p class="text-gray-300 mb-1"><span class="font-medium text-gray-400">OS:</span> {seeker.os}</p>
+					<p class="text-gray-300 mb-1"><span class="font-medium text-gray-400">IP:</span> {seeker.ip}</p>
+					<p class="text-gray-300 mb-2"><span class="font-medium text-gray-400">Last Active:</span> {formatLastActive(seeker.last_active)}</p>
+					<p>
+						<span class="font-medium text-gray-400">Status:</span> 
+						<span class={`inline-block px-2 py-1 rounded text-sm font-semibold ${
+							seeker.disconnected ? 'bg-red-600 text-red-100' : 'bg-green-600 text-green-100'
+						}`}>
+							{seeker.disconnected ? 'Disconnected' : 'Connected'}
+						</span>
+					</p>
+				</a>
+				<button
+					on:click={() => removeSeeker(seeker.id)}
+					class="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors duration-300"
+				>
+					Remove
+				</button>
+			</div>
 		{/each}
 	</div>
 {:else}

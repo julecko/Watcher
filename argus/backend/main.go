@@ -17,6 +17,7 @@ func main() {
 	http.HandleFunc("/ws/frontend/", handlers.FrontendWebSocketHandler)
 
 	http.HandleFunc("/api/seekers", handlers.GetSeekers)
+	http.HandleFunc("/api/remove-seeker", handlers.RemoveSeeker)
 
 	log.Println("Server starting on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {

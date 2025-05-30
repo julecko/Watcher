@@ -11,14 +11,20 @@ RECONNECT_DELAY = 5
 
 seconds_disconnected = 0
 client_uuid = None
-
+should_reconnect = True
 
 def on_message(ws, message):
+    global should_reconnect
     print(f"[Server] {message}")
     try:
         data = json.loads(message)
         if data.get("type") == "shell_command":
             ...
+        elif data.get("type") == "Disconnect":
+            print(f"[Info] Received server-initiated disconnect: {data.get('data')}")
+            should_reconnect = False
+            ws.close()
+            exit(0)
     except json.JSONDecodeError:
         print("[Error] Failed to decode server message.")
 
@@ -48,9 +54,9 @@ def on_open(ws):
 
 
 def run_websocket():
-    global seconds_disconnected
+    global seconds_disconnected, should_reconnect
 
-    while True:
+    while should_reconnect:
         ws = websocket.WebSocketApp(
             SERVER_URL,
             on_open=on_open,
@@ -60,6 +66,10 @@ def run_websocket():
         )
 
         ws.run_forever()
+
+        if not should_reconnect:
+            print("[Info] Server-initiated disconnect received, not reconnecting.")
+            break
 
         seconds_disconnected += RECONNECT_DELAY
         print(f"[Reconnect] Lost connection. Retrying in {RECONNECT_DELAY}s (disconnected for {seconds_disconnected}s)...")

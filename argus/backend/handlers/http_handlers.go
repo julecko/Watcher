@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"argus/backend/models"
 	"argus/backend/utils"
 	"encoding/json"
 	"log"
@@ -51,18 +52,25 @@ func RemoveSeeker(w http.ResponseWriter, r *http.Request) {
 	}
 
 	seekersLock.RLock()
-	_, exists := seekers[request.UUID]
+	seeker, exists := seekers[request.UUID]
 	seekersLock.RUnlock()
 	if !exists {
 		http.Error(w, "Seeker not found", http.StatusNotFound)
 		return
 	}
 
+	if seeker.Conn != nil {
+		err := sendToSeeker(request.UUID, models.Message{
+			Type: "Disconnect",
+			Data: "Server-initiated disconnect",
+		})
+		if err != nil {
+			log.Printf("[RemoveSeeker] Failed to send disconnect message to seeker %s: %v", request.UUID, err)
+		}
+	}
+
 	utils.RemoveFromMap(seekers, request.UUID, &seekersLock)
 	log.Printf("[RemoveSeeker] Seeker removed: %s", request.UUID)
-
-	notifySeekerDisconnected(request.UUID)
-	broadcastSeekerList()
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message": "Seeker removed successfully"}`))
