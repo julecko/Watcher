@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, afterUpdate } from 'svelte';
+	import { writable } from 'svelte/store';
 	export let sendMessage: (type: string, data: string) => void;
-	export let shellRunning: import('svelte/store').Writable<boolean>;
 	export let shellOutput: import('svelte/store').Writable<string[]>;
+    const shellRunning = writable(false);
 
 	let shellInput = '';
 	let outputDiv: HTMLDivElement;
@@ -29,11 +30,11 @@
 		}
 	}
 
-	$: {
+	afterUpdate(() => {
 		if (outputDiv) {
 			outputDiv.scrollTo({ top: outputDiv.scrollHeight, behavior: 'smooth' });
 		}
-	}
+	});
 
 	let isResizing = false;
 	let startY: number;

