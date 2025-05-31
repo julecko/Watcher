@@ -130,6 +130,8 @@
 			ws?.close();
 			sendMessage('screenshare_command', 'stop');
 			sendMessage('keylogger_command', 'stop');
+			sendMessage('shell_command', 'stop');
+			shellOutput.set([]);
 		};
 	});
 

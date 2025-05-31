@@ -41,10 +41,4 @@ class ScreenShare:
         if self.thread:
             self.thread = None
 
-screen_share = ScreenShare()
-
-def start_screenshare(ws_holder):
-    screen_share.start_screenshare(ws_holder)
-
-def stop_screenshare():
-    screen_share.stop_screenshare()
+screenshare = ScreenShare()
