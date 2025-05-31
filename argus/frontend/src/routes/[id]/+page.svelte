@@ -9,6 +9,7 @@
 	import MessageComponent from '$lib/components/MessageComponent.svelte';
 	import ScreenShareComponent from '$lib/components/ScreenShareComponent.svelte';
 	import FileTransferComponent from '$lib/components/FileTransferComponent.svelte';
+	import NotificationComponent from '$lib/components/NotificationComponent.svelte';
 
 	let seeker: Seeker | null = null;
 	let ws: WebSocket | null = null;
@@ -105,6 +106,7 @@
 						if (message.data === id) {
 							console.log('Seeker disconnected.');
 							connected.set(false);
+                            shellOutput.set([]);
 							fileTransferOutput.set([]);
                             currentCwd.set('No current working directory');
 						}
@@ -193,6 +195,7 @@
 		<ScreenShareComponent {sendMessage} {screenShareFrame} />
 		<KeyloggerComponent {sendMessage} {keylogs} />
 		<FileTransferComponent {sendMessage} {fileTransferOutput} {currentCwd} />
+        <NotificationComponent {sendMessage} />
 		<MessageComponent {sendMessage} />
 	</div>
 {:else}

