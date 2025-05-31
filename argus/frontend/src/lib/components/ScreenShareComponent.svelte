@@ -38,12 +38,12 @@
 	</div>
 
 	{#if $screenSharing}
-		<div class="bg-gray-900 p-4 rounded max-h-96 overflow-y-auto">
+		<div class="bg-gray-900 p-4 rounded">
 			{#if $screenShareFrame}
 				<img
 					src="data:image/jpeg;base64,{$screenShareFrame}"
 					alt="Screen Share"
-					class="max-w-full h-auto rounded"
+					class="w-full h-auto rounded object-contain"
 				/>
 			{:else}
 				<p class="text-gray-400 text-sm">Waiting for screen share to start...</p>
