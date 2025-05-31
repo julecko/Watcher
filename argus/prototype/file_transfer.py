@@ -1,7 +1,7 @@
 import base64
 import os
-import subprocess
 import json
+
 
 def save_file(file_data, shell_process):
     try:
@@ -14,19 +14,20 @@ def save_file(file_data, shell_process):
 
         file_content = base64.b64decode(content)
 
-        if path:
-            save_path = os.path.abspath(path)
-            os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        if path.endswith(os.sep) or os.path.isdir(path):
+            save_path = os.path.join(path, filename)
         else:
-            if shell_process and shell_process.stdin:
-                shell_process.stdin.write("cd\n")
-                shell_process.stdin.flush()
-                save_path = os.path.join(os.getcwd(), filename)
+            if not path.lower().endswith(filename.lower()):
+                save_path = os.path.join(path, filename)
             else:
-                save_path = os.path.join(os.getcwd(), filename)
+                save_path = path
+
+        save_path = os.path.abspath(save_path)
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
         with open(save_path, "wb") as f:
             f.write(file_content)
+
         return f"[Success] File {filename} saved to {save_path}"
     except Exception as e:
         return f"[Error] Failed to save file: {str(e)}"

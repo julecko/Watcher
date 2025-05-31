@@ -3,6 +3,7 @@
 
 	export let sendMessage: (type: string, data: string) => void;
 	export let fileTransferOutput: Writable<string[]>;
+	export let currentCwd: Writable<string>;
 
 	let fileInput: HTMLInputElement | null = null;
 	let uploadPathInput = '';
@@ -18,7 +19,7 @@
 			selectedFile = input.files[0];
 			fileTransferOutput.update((arr) => [
 				...arr,
-				`[Info] "${selectedFile?.name}" ready to upload`,
+				`[Info] "${selectedFile?.name}" ready to upload`
 			]);
 		} else {
 			selectedFile = null;
@@ -27,18 +28,20 @@
 
 	async function uploadFile() {
 		if (!selectedFile) {
+			fileTransferOutput.update((arr) => [...arr, '[Error] No file selected to upload']);
+			return;
+		}
+
+		if ($currentCwd === 'No current working directory') {
 			fileTransferOutput.update((arr) => [
 				...arr,
-				'[Error] No file selected to upload',
+				'[Error] Cannot upload file: No current working directory set.'
 			]);
 			return;
 		}
 
 		isUploading = true;
-		fileTransferOutput.update((arr) => [
-			...arr,
-			`[Info] Reading "${selectedFile?.name}"…`,
-		]);
+		fileTransferOutput.update((arr) => [...arr, `[Info] Reading "${selectedFile?.name}"…`]);
 
 		const reader = new FileReader();
 		reader.onload = () => {
@@ -48,7 +51,7 @@
 			if (!base64) {
 				fileTransferOutput.update((arr) => [
 					...arr,
-					`[Error] Could not convert "${selectedFile?.name}" to Base64.`,
+					`[Error] Could not convert "${selectedFile?.name}" to Base64.`
 				]);
 				isUploading = false;
 				return;
@@ -57,19 +60,19 @@
 			const fileData = {
 				filename: selectedFile!.name,
 				content: base64,
-				path: uploadPathInput.trim() || '',
+				path: uploadPathInput.trim() || $currentCwd
 			};
 
 			try {
 				sendMessage('file_upload', JSON.stringify(fileData));
 				fileTransferOutput.update((arr) => [
 					...arr,
-					`[Success] Upload request sent for "${selectedFile!.name}".`,
+					`[Success] Upload request sent for "${selectedFile!.name}".`
 				]);
 			} catch (err) {
 				fileTransferOutput.update((arr) => [
 					...arr,
-					`[Error] Failed to send upload message: ${err}`,
+					`[Error] Failed to send upload message: ${err}`
 				]);
 			}
 
@@ -82,7 +85,7 @@
 		reader.onerror = () => {
 			fileTransferOutput.update((arr) => [
 				...arr,
-				`[Error] FileReader error on "${selectedFile!.name}".`,
+				`[Error] FileReader error on "${selectedFile!.name}".`
 			]);
 			isUploading = false;
 		};
@@ -93,17 +96,23 @@
 	function downloadFile() {
 		if (downloadPathInput.trim()) {
 			isDownloading = true;
-			sendMessage('file_download', downloadPathInput.trim());
+			let downloadPath = downloadPathInput.trim();
+			if (!downloadPath.includes('\\') && !downloadPath.includes('/')) {
+				if ($currentCwd !== 'No current working directory') {
+					downloadPath = `${$currentCwd}\\${downloadPath}`;
+				}
+			}
+			sendMessage('file_download', downloadPath);
 			fileTransferOutput.update((arr) => [
 				...arr,
-				`[Info] Download request sent for "${downloadPathInput.trim()}".`,
+				`[Info] Download request sent for "${downloadPath}".`
 			]);
 			downloadPathInput = '';
 			isDownloading = false;
 		} else {
 			fileTransferOutput.update((arr) => [
 				...arr,
-				'[Error] Please specify a file path to download',
+				'[Error] Please specify a file path to download'
 			]);
 		}
 	}
@@ -116,7 +125,7 @@
 		if (outputDiv) {
 			outputDiv.scrollTo({
 				top: outputDiv.scrollHeight,
-				behavior: 'smooth',
+				behavior: 'smooth'
 			});
 		}
 	}
@@ -134,6 +143,11 @@
 	</div>
 
 	<div class="space-y-2">
+		<h4 class="text-lg font-medium text-white">Current Working Directory</h4>
+		<p class="text-gray-300">{$currentCwd}</p>
+	</div>
+
+	<div class="space-y-2">
 		<h4 class="text-lg font-medium text-white">Upload File to Seeker</h4>
 		<div class="flex flex-col space-y-2">
 			<input
@@ -144,27 +158,26 @@
 				class="px-3 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
 				disabled={isUploading}
 			/>
-            <div class="flex space-x-2">
-                <input
-                    bind:value={uploadPathInput}
-                    type="text"
-                    placeholder="Optional save path (e.g., C:\Users\Public\file.txt)"
-                    class="flex-1 px-4 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    disabled={isUploading}
-                />
-
-                <button
-                    on:click={uploadFile}
-                    class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded transition w-[110px]"
-                    disabled={isUploading || !selectedFile}
-                > 
-                    {#if isUploading}
-                        Uploading…
-                    {:else}
-                        Upload
-                    {/if}
-                </button>
-            </div>
+			<div class="flex space-x-2">
+				<input
+					bind:value={uploadPathInput}
+					type="text"
+					placeholder="Optional save path (defaults to CWD)"
+					class="flex-1 px-4 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+					disabled={isUploading}
+				/>
+				<button
+					on:click={uploadFile}
+					class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded transition w-[110px]"
+					disabled={isUploading || !selectedFile}
+				>
+					{#if isUploading}
+						Uploading…
+					{:else}
+						Upload
+					{/if}
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -174,7 +187,7 @@
 			<input
 				bind:value={downloadPathInput}
 				type="text"
-				placeholder="File path on Seeker (e.g., C:\Users\Public\file.txt)"
+				placeholder="File path on Seeker (filename or full path)"
 				class="flex-1 px-4 py-2 rounded bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
 				disabled={isDownloading}
 				on:keydown={(e) => e.key === 'Enter' && downloadFile()}
