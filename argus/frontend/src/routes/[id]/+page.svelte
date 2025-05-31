@@ -199,7 +199,7 @@
 		<MessageComponent {sendMessage} />
 	</div>
 {:else}
-	<p class="text-gray-300">Rat not found.</p>
+	<p class="text-gray-300">Seeker not found.</p>
 {/if}
 
 <style>

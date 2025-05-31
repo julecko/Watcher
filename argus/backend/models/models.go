@@ -9,7 +9,7 @@ import (
 // Seeker represents a connected client with extensible fields
 type Seeker struct {
 	ID           string                 `json:"id"`   // Unique identifier
-	Name         string                 `json:"name"` // Rat name
+	Name         string                 `json:"name"` // Seeker name
 	OS           string                 `json:"os"`   // Operating system
 	IP           string                 `json:"ip"`   // IP address
 	Conn         *websocket.Conn        `json:"-"`    // WebSocket connection (not serialized)
