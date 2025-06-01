@@ -1,0 +1,53 @@
+# Visual Studio specific files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+Debug/
+Release/
+x64/
+x86/
+*.appx
+*.appxbundle
+*.apk
+*.app
+*.exe
+
+# Visual Studio Code specific files
+.vscode/
+
+# Rider specific files
+.idea/
+
+# NuGet packages
+*.nupkg
+packages/
+*.snupkg
+*.nuspec
+
+# Logs
+*.log
+*.tlog
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Ignore all DLL files and PDB files
+*.dll
+*.pdb
+
+# User-specific files
+*.dbmdl
+*.dbproj.schemaview
+*.dbproj.user
+*.dbproj
+
+# Custom
+.env
