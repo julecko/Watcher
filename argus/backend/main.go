@@ -4,10 +4,15 @@ import (
 	"argus/backend/handlers"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 )
 
 func main() {
+	handlers.LoadSeekersFromFile()
+
 	staticPath := filepath.Join("backend", "static")
 	http.Handle("/_app/", http.StripPrefix("/_app/", http.FileServer(http.Dir(filepath.Join(staticPath, "_app")))))
 	http.HandleFunc("/", handlers.ServeFrontend)
@@ -18,6 +23,15 @@ func main() {
 
 	http.HandleFunc("/api/seekers", handlers.GetSeekers)
 	http.HandleFunc("/api/remove-seeker", handlers.RemoveSeeker)
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		log.Println("Shutting down... Saving seekers...")
+		handlers.SaveSeekersToFile()
+		os.Exit(0)
+	}()
 
 	log.Println("Server starting on http://localhost:8080")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
