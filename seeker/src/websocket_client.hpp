@@ -1,5 +1,4 @@
-#ifndef WEBSOCKET_CLIENT_HPP
-#define WEBSOCKET_CLIENT_HPP
+#pragma once
 
 #include <libwebsockets.h>
 #include <string>
@@ -34,5 +33,3 @@ private:
     bool interrupted_;
     static WebSocketClient* instance_;
 };
-
-#endif // WEBSOCKET_CLIENT_HPP

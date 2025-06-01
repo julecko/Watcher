@@ -1,4 +1,6 @@
 #include "./src/websocket_client.hpp"
+#include "./src/user_info.hpp"
+
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <string>
@@ -9,7 +11,6 @@ struct Seeker {
     std::string ID;
     std::string Name;
     std::string OS;
-    std::string IP;
     std::map<std::string, std::string> Metadata;
 
     nlohmann::json to_json() const {
@@ -17,7 +18,6 @@ struct Seeker {
         j["id"] = ID;
         j["name"] = Name;
         j["os"] = OS;
-        j["ip"] = IP;
         j["metadata"] = Metadata;
         return j;
     }
@@ -28,22 +28,18 @@ int main() {
 
     client.setMessageCallback([&client](const std::string& message, size_t len) {
         std::cout << "Received from server: " << message << std::endl;
-        // Optionally close after receiving a message
-        // client.stop();
+        nlohmann::json json = nlohmann::json::parse(message);
         });
 
-    // Set event callback
     client.setEventCallback([&client](enum lws_callback_reasons reason) {
         if (reason == LWS_CALLBACK_CLIENT_ESTABLISHED) {
             std::cout << "Connected to server" << std::endl;
 
             // Create and populate Seeker struct
             Seeker seeker;
-            seeker.ID = "seeker_001";
-            seeker.Name = "TestClient";
+            seeker.ID = user_info::getUUID();
+            seeker.Name = user_info::getUsername();
             seeker.OS = "Windows";
-            seeker.IP = "127.0.0.1";
-            seeker.Metadata = { {"version", "1.0"}, {"env", "test"} };
 
             nlohmann::json json = seeker.to_json();
             std::string json_str = json.dump();
