@@ -10,6 +10,14 @@
     {
       "name": "nlohmann-json",
       "default-features": true
+    },
+    {
+      "name": "stb",
+      "default-features": true
+    },
+    {
+      "name": "cpp-base64",
+      "default-features": true
     }
   ]
 }

