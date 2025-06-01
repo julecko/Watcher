@@ -60,7 +60,6 @@ namespace file_transfer {
 
             std::string file_content = base64_decode(content);
 
-            // Construct save path
             std::filesystem::path save_path;
             if (path.ends_with(std::filesystem::path::preferred_separator) ||
                 std::filesystem::is_directory(path)) {
@@ -76,13 +75,10 @@ namespace file_transfer {
                 }
             }
 
-            // Convert to absolute path
             save_path = std::filesystem::absolute(save_path);
 
-            // Create directories if they don't exist
             std::filesystem::create_directories(save_path.parent_path());
 
-            // Write file
             std::ofstream file(save_path, std::ios::binary);
             if (!file) {
                 return "[Error] Failed to open file for writing: " + save_path.string();
@@ -99,27 +95,22 @@ namespace file_transfer {
 
     std::string send_file(const std::string& file_path) {
         try {
-            // Convert to absolute path
             std::filesystem::path abs_path = std::filesystem::absolute(file_path);
             if (!std::filesystem::exists(abs_path)) {
                 return "[Error] File not found: " + abs_path.string();
             }
 
-            // Read file content
             std::ifstream file(abs_path, std::ios::binary);
             if (!file) {
                 return "[Error] Failed to open file: " + abs_path.string();
             }
 
-            // Read file into a vector
             std::vector<char> content((std::istreambuf_iterator<char>(file)),
                 std::istreambuf_iterator<char>());
             file.close();
 
-            // Encode content to base64
             std::string base64_content = base64_encode(content);
 
-            // Create JSON response
             nlohmann::json response;
             response["filename"] = abs_path.filename().string();
             response["content"] = base64_content;
@@ -131,4 +122,4 @@ namespace file_transfer {
         }
     }
 
-} // namespace file_transfer
+}

