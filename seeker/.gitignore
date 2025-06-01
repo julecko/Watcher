@@ -51,3 +51,4 @@ packages/
 
 # Custom
 .env
+vcpkg_installed/
