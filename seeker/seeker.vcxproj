@@ -146,11 +146,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="seeker.cpp" />
+    <ClCompile Include="src\file_transfer.cpp" />
     <ClCompile Include="src\user_info.cpp" />
     <ClCompile Include="src\util.cpp" />
     <ClCompile Include="src\websocket_client.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\file_transfer.hpp" />
     <ClInclude Include="src\user_info.hpp" />
     <ClInclude Include="src\util.hpp" />
     <ClInclude Include="src\websocket_client.hpp" />

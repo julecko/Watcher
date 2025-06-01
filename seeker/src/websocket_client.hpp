@@ -1,13 +1,14 @@
 #pragma once
 
 #include <libwebsockets.h>
-#include <string>
 #include <functional>
+#include <string>
+#include <mutex>
 
 class WebSocketClient {
 public:
-    using MessageCallback = std::function<void(const std::string& message, size_t len)>;
-    using EventCallback = std::function<void(enum lws_callback_reasons reason)>;
+    using MessageCallback = std::function<void(const std::string&, size_t)>;
+    using EventCallback = std::function<void(enum lws_callback_reasons)>;
 
     WebSocketClient(const std::string& address, int port, const std::string& path);
     ~WebSocketClient();
@@ -23,13 +24,15 @@ public:
     static int callback_client(struct lws* wsi, enum lws_callback_reasons reason, void* user, void* in, size_t len);
 
 private:
-    struct lws_context* context_;
-    struct lws* client_wsi_;
+    static WebSocketClient* instance_;
     std::string address_;
     int port_;
     std::string path_;
+    struct lws_context* context_;
+    struct lws* client_wsi_;
+    bool interrupted_;
     MessageCallback message_callback_;
     EventCallback event_callback_;
-    bool interrupted_;
-    static WebSocketClient* instance_;
+    std::string message_buffer_;
+    std::mutex buffer_mutex_;
 };

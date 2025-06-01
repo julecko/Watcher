@@ -122,11 +122,28 @@ int WebSocketClient::callback_client(struct lws* wsi, enum lws_callback_reasons 
         }
         break;
     case LWS_CALLBACK_CLIENT_RECEIVE:
+    {
         std::cout << "Callback: LWS_CALLBACK_CLIENT_RECEIVE, len=" << len << std::endl;
-        if (instance_->message_callback_) {
-            instance_->message_callback_(std::string((char*)in, len), len);
+        if (!in) {
+            std::cerr << "Received empty or null message" << std::endl;
+            return 0;
         }
-        break;
+
+        std::lock_guard<std::mutex> lock(instance_->buffer_mutex_);
+
+        instance_->message_buffer_.append(static_cast<char*>(in), len);
+
+        if (lws_is_final_fragment(wsi)) {
+            if (instance_->message_callback_) {
+                instance_->message_callback_(instance_->message_buffer_, instance_->message_buffer_.length());
+            }
+            instance_->message_buffer_.clear();
+        }
+        else {
+            std::cout << "Received partial message, waiting for final fragment" << std::endl;
+        }
+    }
+    break;
     case LWS_CALLBACK_CLIENT_CLOSED:
         std::cout << "Callback: LWS_CALLBACK_CLIENT_CLOSED" << std::endl;
         if (instance_->event_callback_) {
