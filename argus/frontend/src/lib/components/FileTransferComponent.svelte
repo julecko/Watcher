@@ -32,7 +32,7 @@
 			return;
 		}
 
-		if ($currentCwd === 'No current working directory') {
+		if ($currentCwd === 'No current working directory' && !uploadPathInput.trim()) {
 			fileTransferOutput.update((arr) => [
 				...arr,
 				'[Error] Cannot upload file: No current working directory set.'
