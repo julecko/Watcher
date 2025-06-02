@@ -33,8 +33,8 @@ func main() {
 		os.Exit(0)
 	}()
 
-	log.Println("Server starting on http://localhost:8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	log.Println("Server starting on http://localhost:8010")
+	if err := http.ListenAndServe(":8010", nil); err != nil {
 		log.Fatal(err)
 	}
 }
