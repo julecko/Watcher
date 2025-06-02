@@ -81,7 +81,7 @@
 		const id = $page.params.id;
 		setSeeker(id);
 
-		ws = new WebSocket(`ws://localhost:8080/ws/frontend/${id}`);
+		ws = new WebSocket(`ws://c2.dilino.sk/ws/frontend/${id}`);
 
 		ws.onmessage = async (event) => {
 			console.log('Message from server:', event.data);

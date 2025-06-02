@@ -8,7 +8,7 @@
 	let ws: WebSocket;
 
 	onMount(() => {
-		ws = new WebSocket('ws://localhost:8080/ws');
+		ws = new WebSocket('ws://c2.dilino.sk/ws');
 		ws.onmessage = (event: MessageEvent) => {
 			const msg: Message = JSON.parse(event.data);
 			if (msg.type === 'shell_output') {

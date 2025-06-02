@@ -18,7 +18,7 @@
 
 	async function removeSeeker(uuid: string) {
 		try {
-			const response = await fetch('http://localhost:8080/api/remove-seeker', {
+			const response = await fetch('http://dilino.sk:8010/api/remove-seeker', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -39,7 +39,7 @@
 	}
 
 	onMount(() => {
-		const ws = new WebSocket('ws://localhost:8080/ws/frontend');
+		const ws = new WebSocket('ws://c2.dilino.sk/ws/frontend');
 
 		ws.onmessage = (event) => {
 			try {
