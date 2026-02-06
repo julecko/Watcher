@@ -150,7 +150,7 @@
       <OmitFramePointers>true</OmitFramePointers>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <OptimizeReferences>false</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -167,7 +167,6 @@
     <ClCompile Include="src\user_info.cpp" />
     <ClCompile Include="src\util.cpp" />
     <ClCompile Include="src\websocket_client.cpp" />
-    <ClCompile Include="src\win_notification.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\file_transfer.hpp" />
@@ -177,7 +176,6 @@
     <ClInclude Include="src\user_info.hpp" />
     <ClInclude Include="src\util.hpp" />
     <ClInclude Include="src\websocket_client.hpp" />
-    <ClInclude Include="src\win_notification.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
