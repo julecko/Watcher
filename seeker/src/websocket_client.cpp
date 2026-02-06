@@ -28,9 +28,12 @@ WebSocketClient::~WebSocketClient() {
 bool WebSocketClient::initialize() {
     struct lws_context_creation_info info;
     memset(&info, 0, sizeof(info));
+    info.port = CONTEXT_PORT_NO_LISTEN;
     info.protocols = protocols;
     info.gid = -1;
     info.uid = -1;
+
+    info.options |= LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
 
     context_ = lws_create_context(&info);
     if (!context_) {
@@ -55,6 +58,8 @@ bool WebSocketClient::connect() {
     connect_info.host = address_.c_str();
     connect_info.origin = address_.c_str();
     connect_info.protocol = protocols[0].name;
+
+    connect_info.ssl_connection = LCCSCF_USE_SSL;
 
     client_wsi_ = lws_client_connect_via_info(&connect_info);
     if (!client_wsi_) {

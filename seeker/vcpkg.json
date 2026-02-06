@@ -5,7 +5,7 @@
   "dependencies": [
     {
       "name": "libwebsockets",
-      "default-features": false
+      "default-features": true
     },
     {
       "name": "nlohmann-json",
